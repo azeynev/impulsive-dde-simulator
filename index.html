@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система с изоставане и импулси</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .system-info {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .math-display {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 16px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        input, select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        button {
+            padding: 14px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            grid-column: 1 / -1;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(41, 128, 185, 0.3);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .plots {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 30px 0;
+        }
+        @media (max-width: 768px) {
+            .plots {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+        .plot-container {
+            height: 500px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .result-box {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .result-box:hover {
+            transform: translateY(-3px);
+        }
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .result-label {
+            font-size: 14px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .impulse-details {
+            background: #fff3cd;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .impulse-details h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .impulse-details h3::before {
+            content: '⚡';
+            font-size: 24px;
+        }
+        .impulse-list {
+            margin-top: 15px;
+            display: grid;
+            gap: 15px;
+        }
+        .impulse-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .impulse-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+        .impulse-item.tau1::before {
+            background: #2ecc71;
+        }
+        .impulse-item.tau2::before {
+            background: #e67e22;
+        }
+        .impulse-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .impulse-type {
+            font-weight: bold;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        .impulse-time {
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #666;
+        }
+        .plane-info {
+            background: #e8f4f8;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border-left: 4px solid #3498db;
+        }
+        .plane-info h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .plane-info h3::before {
+            content: '📐';
+            font-size: 24px;
+        }
+        .legend-box {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+            border-radius: 3px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 10px 5px 0;
+            font-size: 14px;
+        }
+        .legend-container {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Система с изоставане и импулси</h1>
+        <p class="subtitle">Прецизно графично решение на функционално-диференциални уравнения</p>
+        
+        <div class="system-info">
+            <div class="math-display">
+                \[
+                \begin{cases}
+                x'(t) = x(t) + \cos^2 x(t - 0.5) + \sin^2 y(t - 0.5) - 1.1 \\
+                y'(t) = y(t) + \sin^2 x(t - 0.5) + \cos^2 y(t - 0.5) + 0.1
+                \end{cases}
+                \]
+            </div>
+            <div class="math-display">
+                Начални условия: \( x(t) \equiv y(t) \equiv 0.05, \quad t \in [-0.5, 0] \)
+            </div>
+        </div>
+
+        <div class="plane-info">
+            <h3>Импулсни повърхнини и ефекти</h3>
+            <div class="math-display">
+                <strong>Повърхнини:</strong><br>
+                \[
+                \tau_1: t = x + y - 0.08 \quad \Rightarrow \quad x + y = t + 0.08
+                \]
+                \[
+                \tau_2: t = x + y - 1 \quad \Rightarrow \quad x + y = t + 1
+                \]
+            </div>
+            <div class="math-display">
+                <strong>Импулсен ефект:</strong><br>
+                \[
+                \Delta_1 = \left( \frac{\sin^2(x)}{20}; \frac{\cos^2(x)}{10} \right), \quad
+                \Delta_2 = \left( \frac{\cos^2(y)}{10}; \frac{\sin^2(y)}{5} \right)
+                \]
+            </div>
+            
+            <div class="legend-container">
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #3498db;"></span>
+                    <span>x(t)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #e74c3c;"></span>
+                    <span>y(t)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #2ecc71;"></span>
+                    <span>Импулс τ₁</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #e67e22;"></span>
+                    <span>Импулс τ₂</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #9b59b6;"></span>
+                    <span>Траектория</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="tStart">Начало t:</label>
+                <input type="number" id="tStart" value="0" step="0.1" min="-2" max="2">
+            </div>
+            <div class="control-group">
+                <label for="tEnd">Край t:</label>
+                <input type="number" id="tEnd" value="2.5" step="0.1" min="0.1" max="5">
+            </div>
+            <div class="control-group">
+                <label for="step">Стъпка:</label>
+                <input type="number" id="step" value="0.001" step="0.0001" min="0.0001" max="0.01">
+            </div>
+            <div class="control-group">
+                <label for="scaleType">Скала:</label>
+                <select id="scaleType">
+                    <option value="linear">Линейна</option>
+                    <option value="log">Логаритмична</option>
+                </select>
+            </div>
+            <button onclick="calculate()" id="calcBtn">🚀 Изчисли системата</button>
+        </div>
+        
+        <div class="plots">
+            <div class="plot-container" id="timePlot"></div>
+            <div class="plot-container" id="phasePlot"></div>
+        </div>
+        
+        <div class="results">
+            <div class="result-box">
+                <div class="result-label">Импулси τ₁</div>
+                <div class="result-value" id="impulse1Count">0</div>
+            </div>
+            <div class="result-box">
+                <div class="result-label">Импулси τ₂</div>
+                <div class="result-value" id="impulse2Count">0</div>
+            </div>
+            <div class="result-box">
+                <div class="result-label">x(край)</div>
+                <div class="result-value" id="xFinal">0.0500</div>
+            </div>
+            <div class="result-box">
+                <div class="result-label">y(край)</div>
+                <div class="result-value" id="yFinal">0.0500</div>
+            </div>
+        </div>
+
+        <div class="impulse-details">
+            <h3>Детайли за импулсите</h3>
+            <div id="impulseDetails">
+                <p>Няма засечени импулси в този интервал.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Променливи за данните
+        let t = [];
+        let x = [];
+        let y = [];
+        let impulses1 = [];
+        let impulses2 = [];
+        
+        // Начални параметри
+        const x0 = 0.05;
+        const y0 = 0.05;
+        const delay = 0.5;
+        
+        // Конфигурация на MathJax
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            calculate();
+        });
+        
+        function calculate() {
+            const calcBtn = document.getElementById('calcBtn');
+            calcBtn.disabled = true;
+            calcBtn.textContent = '🔄 Изчисляване...';
+            
+            setTimeout(() => {
+                try {
+                    performCalculation();
+                } catch (error) {
+                    console.error('Грешка:', error);
+                    alert('Възникна грешка при изчислението: ' + error.message);
+                } finally {
+                    calcBtn.disabled = false;
+                    calcBtn.textContent = '🚀 Изчисли системата';
+                    MathJax.typesetPromise();
+                }
+            }, 50);
+        }
+        
+        function performCalculation() {
+            // Вземане на параметрите
+            const tStart = parseFloat(document.getElementById('tStart').value);
+            const tEnd = parseFloat(document.getElementById('tEnd').value);
+            const step = parseFloat(document.getElementById('step').value);
+            
+            // Проверка
+            if (tStart >= tEnd) {
+                throw new Error('Началното време трябва да е по-малко от крайното');
+            }
+            
+            // Изчистване на старите данни
+            t = [];
+            x = [];
+            y = [];
+            impulses1 = [];
+            impulses2 = [];
+            
+            // Инициализиране
+            const totalSteps = Math.ceil((tEnd - tStart) / step);
+            
+            // История за забавянето
+            const history = [];
+            
+            // Ако започваме преди 0, добавяме постоянни стойности
+            if (tStart < 0) {
+                const stepsToZero = Math.ceil((0 - tStart) / step);
+                for (let i = 0; i < stepsToZero; i++) {
+                    const time = tStart + i * step;
+                    if (time <= 0) {
+                        t.push(time);
+                        x.push(x0);
+                        y.push(y0);
+                        history.push({t: time, x: x0, y: y0});
+                    }
+                }
+            }
+            
+            // Определяне на началната точка за изчисление
+            const calcStart = Math.max(0, tStart);
+            let currentX = (calcStart === 0) ? x0 : x0;
+            let currentY = (calcStart === 0) ? y0 : y0;
+            
+            // Ако започваме след 0, изчисляваме до calcStart
+            if (calcStart > 0) {
+                const tempSteps = Math.ceil(calcStart / step);
+                let tempX = x0;
+                let tempY = y0;
+                
+                for (let i = 0; i < tempSteps; i++) {
+                    const tempTime = i * step;
+                    const delayedTime = tempTime - delay;
+                    let delayedX = x0, delayedY = y0;
+                    
+                    if (delayedTime > 0) {
+                        const histIndex = Math.floor(delayedTime / step);
+                        if (histIndex >= 0 && histIndex < history.length) {
+                            delayedX = history[histIndex].x;
+                            delayedY = history[histIndex].y;
+                        }
+                    }
+                    
+                    const dx = tempX + Math.cos(delayedX)**2 + Math.sin(delayedY)**2 - 1.1;
+                    const dy = tempY + Math.sin(delayedX)**2 + Math.cos(delayedY)**2 + 0.1;
+                    
+                    tempX += dx * step;
+                    tempY += dy * step;
+                    
+                    history.push({t: tempTime, x: tempX, y: tempY});
+                }
+                
+                currentX = tempX;
+                currentY = tempY;
+                
+                t.push(calcStart);
+                x.push(currentX);
+                y.push(currentY);
+            } else if (calcStart === 0) {
+                t.push(0);
+                x.push(x0);
+                y.push(y0);
+            }
+            
+            // Основно изчисление
+            const calcSteps = Math.ceil((tEnd - calcStart) / step);
+            
+            for (let i = 1; i <= calcSteps; i++) {
+                const currentTime = calcStart + i * step;
+                
+                // Забавени стойности
+                const delayedTime = currentTime - delay;
+                let delayedX = x0, delayedY = y0;
+                
+                if (delayedTime > 0) {
+                    const histIndex = Math.floor((delayedTime - calcStart) / step);
+                    if (histIndex >= 0 && histIndex < history.length) {
+                        delayedX = history[histIndex].x;
+                        delayedY = history[histIndex].y;
+                    }
+                }
+                
+                // Производни - метод на Рунге-Кута от 2-ри ред за по-добра точност
+                const k1x = currentX + Math.cos(delayedX)**2 + Math.sin(delayedY)**2 - 1.1;
+                const k1y = currentY + Math.sin(delayedX)**2 + Math.cos(delayedY)**2 + 0.1;
+                
+                const tempX = currentX + k1x * step/2;
+                const tempY = currentY + k1y * step/2;
+                
+                const k2x = tempX + Math.cos(delayedX)**2 + Math.sin(delayedY)**2 - 1.1;
+                const k2y = tempY + Math.sin(delayedX)**2 + Math.cos(delayedY)**2 + 0.1;
+                
+                currentX += k2x * step;
+                currentY += k2y * step;
+                
+                // Проверка за импулси
+                const sum = currentX + currentY;
+                const tau1 = sum - 0.08;
+                const tau2 = sum - 1;
+                
+                // Проверка за τ₁ импулс
+                if (Math.abs(currentTime - tau1) < step * 2 && currentTime > 0.1) {
+                    // Проверяваме дали не сме вече обработили този импулс
+                    let isNewImpulse = true;
+                    for (const imp of impulses1) {
+                        if (Math.abs(imp.t - currentTime) < step * 5) {
+                            isNewImpulse = false;
+                            break;
+                        }
+                    }
+                    
+                    if (isNewImpulse) {
+                        const xBefore = currentX;
+                        const yBefore = currentY;
+                        const dxImpulse = Math.sin(xBefore)**2 / 20;
+                        const dyImpulse = Math.cos(xBefore)**2 / 10;
+                        
+                        currentX += dxImpulse;
+                        currentY += dyImpulse;
+                        
+                        impulses1.push({
+                            t: currentTime,
+                            xBefore: xBefore,
+                            yBefore: yBefore,
+                            xAfter: currentX,
+                            yAfter: currentY,
+                            dx: dxImpulse,
+                            dy: dyImpulse,
+                            type: 1
+                        });
+                    }
+                }
+                
+                // Проверка за τ₂ импулс
+                if (Math.abs(currentTime - tau2) < step * 2 && currentTime > 1.0) {
+                    let isNewImpulse = true;
+                    for (const imp of impulses2) {
+                        if (Math.abs(imp.t - currentTime) < step * 5) {
+                            isNewImpulse = false;
+                            break;
+                        }
+                    }
+                    
+                    if (isNewImpulse) {
+                        const xBefore = currentX;
+                        const yBefore = currentY;
+                        const dxImpulse = Math.cos(yBefore)**2 / 10;
+                        const dyImpulse = Math.sin(yBefore)**2 / 5;
+                        
+                        currentX += dxImpulse;
+                        currentY += dyImpulse;
+                        
+                        impulses2.push({
+                            t: currentTime,
+                            xBefore: xBefore,
+                            yBefore: yBefore,
+                            xAfter: currentX,
+                            yAfter: currentY,
+                            dx: dxImpulse,
+                            dy: dyImpulse,
+                            type: 2
+                        });
+                    }
+                }
+                
+                // Записване
+                t.push(currentTime);
+                x.push(currentX);
+                y.push(currentY);
+                
+                history.push({t: currentTime, x: currentX, y: currentY});
+            }
+            
+            // Обновяване на резултатите
+            updateResults();
+            
+            // Рисуване на графиките
+            drawPlots();
+        }
+        
+        function updateResults() {
+            document.getElementById('impulse1Count').textContent = impulses1.length;
+            document.getElementById('impulse2Count').textContent = impulses2.length;
+            document.getElementById('xFinal').textContent = x[x.length-1].toFixed(6);
+            document.getElementById('yFinal').textContent = y[y.length-1].toFixed(6);
+            
+            // Детайли за импулсите
+            let impulseDetailsHTML = '';
+            
+            if (impulses1.length === 0 && impulses2.length === 0) {
+                impulseDetailsHTML = '<p>Няма засечени импулси в този интервал.</p>';
+            } else {
+                // Обединяваме и сортираме импулсите по време
+                const allImpulses = [...impulses1, ...impulses2].sort((a, b) => a.t - b.t);
+                
+                allImpulses.forEach((imp, index) => {
+                    const isTau1 = imp.type === 1;
+                    const impulseClass = isTau1 ? 'tau1' : 'tau2';
+                    const impulseType = isTau1 ? 'τ₁' : 'τ₂';
+                    const impulseColor = isTau1 ? '#2ecc71' : '#e67e22';
+                    
+                    impulseDetailsHTML += `
+                        <div class="impulse-item ${impulseClass}">
+                            <div class="impulse-header">
+                                <span class="impulse-type" style="color: ${impulseColor}">
+                                    ${impulseType} - Импулс #${index + 1}
+                                </span>
+                                <span class="impulse-time">t = ${imp.t.toFixed(4)}</span>
+                            </div>
+                            <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                <strong>Преди импулс:</strong> x = ${imp.xBefore.toFixed(6)}, y = ${imp.yBefore.toFixed(6)}<br>
+                                <strong>След импулс:</strong> x = ${imp.xAfter.toFixed(6)}, y = ${imp.yAfter.toFixed(6)}
+                            </div>
+                            <div>
+                                <strong>Стойност на скока:</strong> Δx = ${imp.dx.toFixed(6)}, Δy = ${imp.dy.toFixed(6)}<br>
+                                <strong>Сума x+y:</strong> ${(imp.xBefore + imp.yBefore).toFixed(6)} → ${(imp.xAfter + imp.yAfter).toFixed(6)}
+                            </div>
+                        </div>`;
+                });
+            }
+            
+            document.getElementById('impulseDetails').innerHTML = impulseDetailsHTML;
+        }
+        
+        function drawPlots() {
+            drawTimePlot();
+            drawPhasePlot();
+        }
+        
+        function drawTimePlot() {
+            const scaleType = document.getElementById('scaleType').value;
+            const isLogScale = scaleType === 'log';
+            
+            // Филтрираме стойности за логаритмична скала
+            const filteredX = isLogScale ? x.map(val => val > 0 ? val : 0.0001) : x;
+            const filteredY = isLogScale ? y.map(val => val > 0 ? val : 0.0001) : y;
+            
+            const timeTrace1 = {
+                x: t,
+                y: filteredX,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'x(t)',
+                line: {
+                    color: '#3498db',
+                    width: 2.5
+                },
+                hovertemplate: 'x = %{y:.6f}<br>t = %{x:.4f}<extra></extra>'
+            };
+            
+            const timeTrace2 = {
+                x: t,
+                y: filteredY,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'y(t)',
+                line: {
+                    color: '#e74c3c',
+                    width: 2.5
+                },
+                hovertemplate: 'y = %{y:.6f}<br>t = %{x:.4f}<extra></extra>'
+            };
+            
+            const impulseTraces = [];
+            
+            // Импулси τ₁ (зелени)
+            impulses1.forEach((imp, idx) => {
+                // Вертикална линия
+                impulseTraces.push({
+                    x: [imp.t, imp.t],
+                    y: isLogScale ? 
+                        [Math.max(0.0001, Math.min(...filteredX, ...filteredY)), Math.max(...filteredX, ...filteredY)] :
+                        [Math.min(...x, ...y), Math.max(...x, ...y)],
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Импулс τ₁',
+                    line: {
+                        color: '#2ecc71',
+                        width: 3,
+                        dash: 'dash'
+                    },
+                    hovertemplate: `τ₁ импулс<br>t = ${imp.t.toFixed(4)}<br>Δy = ${imp.dy.toFixed(6)}<extra></extra>`
+                });
+                
+                // Точка преди импулса
+                impulseTraces.push({
+                    x: [imp.t],
+                    y: [isLogScale ? (imp.xBefore > 0 ? imp.xBefore : 0.0001) : imp.xBefore],
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'x преди τ₁',
+                    marker: {
+                        color: '#3498db',
+                        size: 10,
+                        symbol: 'circle'
+                    },
+                    showlegend: false,
+                    hovertemplate: `x преди τ₁ = ${imp.xBefore.toFixed(6)}<extra></extra>`
+                });
+                
+                impulseTraces.push({
+                    x: [imp.t],
+                    y: [isLogScale ? (imp.yBefore > 0 ? imp.yBefore : 0.0001) : imp.yBefore],
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'y преди τ₁',
+                    marker: {
+                        color: '#e74c3c',
+                        size: 10,
+                        symbol: 'circle'
+                    },
+                    showlegend: false,
+                    hovertemplate: `y преди τ₁ = ${imp.yBefore.toFixed(6)}<extra></extra>`
+                });
+            });
+            
+            // Импулси τ₂ (оранжеви)
+            impulses2.forEach((imp, idx) => {
+                // Вертикална линия
+                impulseTraces.push({
+                    x: [imp.t, imp.t],
+                    y: isLogScale ? 
+                        [Math.max(0.0001, Math.min(...filteredX, ...filteredY)), Math.max(...filteredX, ...filteredY)] :
+                        [Math.min(...x, ...y), Math.max(...x, ...y)],
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Импулс τ₂',
+                    line: {
+                        color: '#e67e22',
+                        width: 3,
+                        dash: 'dash'
+                    },
+                    hovertemplate: `τ₂ импулс<br>t = ${imp.t.toFixed(4)}<br>Δy = ${imp.dy.toFixed(6)}<extra></extra>`
+                });
+                
+                // Точка преди импулса
+                impulseTraces.push({
+                    x: [imp.t],
+                    y: [isLogScale ? (imp.xBefore > 0 ? imp.xBefore : 0.0001) : imp.xBefore],
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'x преди τ₂',
+                    marker: {
+                        color: '#3498db',
+                        size: 10,
+                        symbol: 'diamond'
+                    },
+                    showlegend: false,
+                    hovertemplate: `x преди τ₂ = ${imp.xBefore.toFixed(6)}<extra></extra>`
+                });
+                
+                impulseTraces.push({
+                    x: [imp.t],
+                    y: [isLogScale ? (imp.yBefore > 0 ? imp.yBefore : 0.0001) : imp.yBefore],
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'y преди τ₂',
+                    marker: {
+                        color: '#e74c3c',
+                        size: 10,
+                        symbol: 'diamond'
+                    },
+                    showlegend: false,
+                    hovertemplate: `y преди τ₂ = ${imp.yBefore.toFixed(6)}<extra></extra>`
+                });
+            });
+            
+            const tStart = parseFloat(document.getElementById('tStart').value);
+            const tEnd = parseFloat(document.getElementById('tEnd').value);
+            
+            Plotly.newPlot('timePlot', 
+                [timeTrace1, timeTrace2, ...impulseTraces],
+                {
+                    title: {
+                        text: `<b>Временни зависимости</b>`,
+                        font: {size: 16}
+                    },
+                    xaxis: {
+                        title: {
+                            text: '<b>Време t</b>',
+                            font: {size: 14}
+                        },
+                        range: [tStart, tEnd],
+                        gridcolor: '#f0f0f0',
+                        showgrid: true,
+                        zeroline: true
+                    },
+                    yaxis: {
+                        title: {
+                            text: '<b>Стойност</b>',
+                            font: {size: 14}
+                        },
+                        type: isLogScale ? 'log' : 'linear',
+                        gridcolor: '#f0f0f0',
+                        showgrid: true,
+                        zeroline: true
+                    },
+                    plot_bgcolor: 'white',
+                    paper_bgcolor: 'white',
+                    showlegend: true,
+                    legend: {
+                        x: 0.02,
+                        y: 0.98,
+                        bgcolor: 'rgba(255, 255, 255, 0.9)',
+                        bordercolor: '#ddd',
+                        borderwidth: 1
+                    },
+                    hovermode: 'x unified',
+                    margin: {l: 60, r: 30, t: 60, b: 50}
+                }
+            );
+        }
+        
+        function drawPhasePlot() {
+            const phaseTrace = {
+                x: x,
+                y: y,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Траектория',
+                line: {
+                    color: '#9b59b6',
+                    width: 3
+                },
+                hovertemplate: 'x = %{x:.6f}<br>y = %{y:.6f}<extra></extra>'
+            };
+            
+            const impulseTraces = [];
+            
+            // Импулси τ₁ (зелени скокове)
+            impulses1.forEach((imp, idx) => {
+                // Линия на скока
+                impulseTraces.push({
+                    x: [imp.xBefore, imp.xAfter],
+                    y: [imp.yBefore, imp.yAfter],
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Скок τ₁',
+                    line: {
+                        color: '#2ecc71',
+                        width: 4
+                    },
+                    marker: {
+                        size: [10, 10],
+                        color: ['#2ecc71', '#2ecc71'],
+                        symbol: ['circle', 'triangle-up']
+                    },
+                    hovertemplate: `Скок τ₁<br>От: (${imp.xBefore.toFixed(6)}, ${imp.yBefore.toFixed(6)})<br>До: (${imp.xAfter.toFixed(6)}, ${imp.yAfter.toFixed(6)})<extra></extra>`
+                });
+            });
+            
+            // Импулси τ₂ (оранжеви скокове)
+            impulses2.forEach((imp, idx) => {
+                // Линия на скока
+                impulseTraces.push({
+                    x: [imp.xBefore, imp.xAfter],
+                    y: [imp.yBefore, imp.yAfter],
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Скок τ₂',
+                    line: {
+                        color: '#e67e22',
+                        width: 4
+                    },
+                    marker: {
+                        size: [10, 10],
+                        color: ['#e67e22', '#e67e22'],
+                        symbol: ['diamond', 'triangle-up']
+                    },
+                    hovertemplate: `Скок τ₂<br>От: (${imp.xBefore.toFixed(6)}, ${imp.yBefore.toFixed(6)})<br>До: (${imp.xAfter.toFixed(6)}, ${imp.yAfter.toFixed(6)})<extra></extra>`
+                });
+            });
+            
+            // Импулсни повърхнини
+            const xMin = Math.min(...x, -1) - 0.5;
+            const xMax = Math.max(...x, 3) + 0.5;
+            const yMin = Math.min(...y, -1) - 0.5;
+            const yMax = Math.max(...y, 3) + 0.5;
+            
+            const surfaceTraces = [];
+            
+            // τ₁ равнини (зелени)
+            const times1 = impulses1.map(imp => imp.t);
+            if (times1.length > 0) {
+                times1.forEach(time => {
+                    surfaceTraces.push({
+                        x: [xMin, xMax],
+                        y: [-xMin + (time + 0.08), -xMax + (time + 0.08)],
+                        type: 'scatter',
+                        mode: 'lines',
+                        name: `τ₁ при t=${time.toFixed(3)}`,
+                        line: {
+                            color: '#2ecc71',
+                            width: 2,
+                            dash: 'dash'
+                        },
+                        opacity: 0.6,
+                        hovertemplate: `τ₁: x + y = ${(time + 0.08).toFixed(3)}<br>t = ${time.toFixed(3)}<extra></extra>`
+                    });
+                });
+            }
+            
+            // τ₂ равнини (оранжеви)
+            const times2 = impulses2.map(imp => imp.t);
+            if (times2.length > 0) {
+                times2.forEach(time => {
+                    surfaceTraces.push({
+                        x: [xMin, xMax],
+                        y: [-xMin + (time + 1), -xMax + (time + 1)],
+                        type: 'scatter',
+                        mode: 'lines',
+                        name: `τ₂ при t=${time.toFixed(3)}`,
+                        line: {
+                            color: '#e67e22',
+                            width: 2,
+                            dash: 'dash'
+                        },
+                        opacity: 0.6,
+                        hovertemplate: `τ₂: x + y = ${(time + 1).toFixed(3)}<br>t = ${time.toFixed(3)}<extra></extra>`
+                    });
+                });
+            }
+            
+            Plotly.newPlot('phasePlot',
+                [phaseTrace, ...impulseTraces, ...surfaceTraces],
+                {
+                    title: {
+                        text: '<b>Фазова равнина</b>',
+                        font: {size: 16}
+                    },
+                    xaxis: {
+                        title: {
+                            text: '<b>x</b>',
+                            font: {size: 14}
+                        },
+                        range: [xMin, xMax],
+                        gridcolor: '#f0f0f0',
+                        showgrid: true,
+                        zeroline: true,
+                        scaleanchor: 'y'
+                    },
+                    yaxis: {
+                        title: {
+                            text: '<b>y</b>',
+                            font: {size: 14}
+                        },
+                        range: [yMin, yMax],
+                        gridcolor: '#f0f0f0',
+                        showgrid: true,
+                        zeroline: true
+                    },
+                    plot_bgcolor: 'white',
+                    paper_bgcolor: 'white',
+                    showlegend: true,
+                    legend: {
+                        x: 0.02,
+                        y: 0.98,
+                        bgcolor: 'rgba(255, 255, 255, 0.95)',
+                        bordercolor: '#ddd',
+                        borderwidth: 1
+                    },
+                    hovermode: 'closest',
+                    margin: {l: 60, r: 30, t: 60, b: 50}
+                }
+            );
+        }
+    </script>
+</body>
+</html>
